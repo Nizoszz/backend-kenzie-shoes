@@ -85,7 +85,7 @@ As credenciais padrão podem ser substituídas pelas variáveis `TEST_POSTGRES_D
 ```bash
 python manage.py check
 python manage.py makemigrations --check --dry-run
-python manage.py spectacular --file schema.yaml --validate
+python manage.py spectacular --file docs/openapi/schema.yaml --validate
 python -m pip_audit -r requirements.txt
 ```
 
