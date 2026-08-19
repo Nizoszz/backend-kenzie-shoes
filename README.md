@@ -1,0 +1,98 @@
+# Django Commerce API
+
+E-commerce construído com Django, Django REST Framework e PostgreSQL. O projeto oferece um site server-rendered com sessões e CSRF e mantém a API pública autenticada por JWT.
+
+## Requisitos
+
+- Python 3.12+
+- Docker com Docker Compose
+
+## Instalação
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
+pip install -r requirements-dev.txt
+```
+
+Copie `.env.example` para `.env` e preencha as credenciais usadas em desenvolvimento.
+
+Sem variáveis de banco, o servidor de desenvolvimento usa SQLite automaticamente. Para usar PostgreSQL local, configure `POSTGRESQL_DB_NAME`, `POSTGRESQL_USERNAME`, `POSTGRESQL_PASSWORD`, `POSTGRESQL_DB_HOST` e `POSTGRESQL_DB_PORT`. Produção exige PostgreSQL por `DATABASE_URL` ou por essas variáveis; a suíte de testes continua usando exclusivamente PostgreSQL no Docker.
+
+Prepare o banco e os arquivos estáticos:
+
+```bash
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py runserver
+```
+
+## Site
+
+As rotas principais são `/`, `/shop/`, `/login/`, `/register/`, `/account/`, `/cart/`, `/checkout/`, `/orders/`, `/partner/apply/` e `/seller/`. O site usa Django Templates, forms, sessões HttpOnly, CSRF e JavaScript sem dependências apenas para o menu e o carrinho lateral.
+
+Contas locais usam Argon2id. O endereço pode ser completado em `/account/`; carrinho e checkout permanecem bloqueados enquanto rua, número, CEP, cidade e estado não estiverem preenchidos. Solicitações para se tornar parceiro são analisadas no Django Admin e o próprio usuário não pode promover sua conta.
+
+## OpenID Connect
+
+OIDC é opcional e usa Authorization Code, PKCE S256, state e nonce. Configure:
+
+```dotenv
+OIDC_SERVER_METADATA_URL=https://provedor/.well-known/openid-configuration
+OIDC_CLIENT_ID=commerce-web
+OIDC_CLIENT_SECRET=
+OIDC_SCOPES=openid email profile
+OIDC_PROVIDER_NAME=default
+OIDC_REDIRECT_URI=http://127.0.0.1:8000/auth/oidc/callback/
+```
+
+### OIDC local pronto para uso
+
+O Compose inclui Keycloak 26.7.0 com o realm e o cliente importados automaticamente:
+
+```bash
+docker compose up -d keycloak
+python manage.py runserver
+```
+
+Acesse `/login/` e escolha **Continuar com Keycloak local**. Conta de demonstração, apenas para desenvolvimento:
+
+```text
+usuário: cliente
+senha: Cliente123!
+```
+
+O Admin do Keycloak fica em `http://127.0.0.1:8080/admin/`, com usuário `keycloak-admin` e senha local `local-admin-password`. Essas credenciais pertencem somente ao ambiente descartável de desenvolvimento e não devem ser utilizadas em produção.
+
+Cadastre no provedor exatamente o callback definido em `OIDC_REDIRECT_URI` — em produção, por exemplo, `https://seu-dominio/auth/oidc/callback/`. Reinicie o servidor depois de alterar o `.env`. O botão fica desabilitado e explica a configuração ausente enquanto metadata ou client ID não estiverem definidos. Apenas e-mails verificados são aceitos. Uma identidade externa nunca é vinculada automaticamente a uma conta local com o mesmo e-mail; o vínculo explícito é iniciado em `/account/` por um usuário já autenticado. Tokens do provedor não são armazenados no navegador nem persistidos após a criação da sessão Django.
+
+## Testes
+
+Os testes usam exclusivamente PostgreSQL. O Compose publica o banco temporário na porta `5433` e mantém os dados somente enquanto o container estiver ativo.
+
+```bash
+docker compose up -d --wait postgres-test
+pytest
+pytest --cov=addresses --cov=cart --cov=orders --cov=products --cov=storefront --cov=users
+docker compose down
+```
+
+As credenciais padrão podem ser substituídas pelas variáveis `TEST_POSTGRES_DB`, `TEST_POSTGRES_USER`, `TEST_POSTGRES_PASSWORD`, `TEST_POSTGRES_HOST` e `TEST_POSTGRES_PORT`.
+
+## Verificações
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py spectacular --file schema.yaml --validate
+python -m pip_audit -r requirements.txt
+```
+
+## Segurança em produção
+
+Defina `DEBUG=false`, uma `SECRET_KEY` longa e aleatória e `ALLOWED_HOSTS` com os domínios reais. HTTPS, HSTS e cookies seguros são ativados automaticamente fora do modo debug. A documentação OpenAPI fica restrita a administradores em produção.
+
+Os tokens de acesso expiram em 15 minutos. Refresh tokens são rotacionados e invalidados após o uso; use `/api/users/token/refresh/` para renovar e `/api/users/logout/` para invalidar uma sessão.
+
+A equivalência funcional com o projeto React de referência está documentada em [FRONTEND_REFERENCE_MATRIX.md](FRONTEND_REFERENCE_MATRIX.md).
