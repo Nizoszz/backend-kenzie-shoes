@@ -1,9 +1,10 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from .models import Product
-from .serializers import ProductSerializer
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .premissions import IsAdminAndSellerCreateUpdatedDestroy
+
+from .models import Product
+from .permissions import IsAdminAndSellerCreateUpdatedDestroy
+from .serializers import ProductSerializer
 
 
 class ProductPaginator(PageNumberPagination):
@@ -32,7 +33,6 @@ class ProductView(ListCreateAPIView):
 
 
 class ProductDetailView(RetrieveUpdateDestroyAPIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminAndSellerCreateUpdatedDestroy]
 

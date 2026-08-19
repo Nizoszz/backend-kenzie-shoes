@@ -1,11 +1,10 @@
 import logging
-from urllib.parse import urlencode
 
 from authlib.integrations.base_client.errors import OAuthError
-from requests.exceptions import RequestException
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
@@ -14,12 +13,12 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
+from requests.exceptions import RequestException
 
-from addresses.models import Address
 from cart.models import Cart
 from orders.models import OrderStatus, UserOrder
 from orders.services import CheckoutError, checkout_cart
@@ -71,7 +70,11 @@ def _oidc_context():
 @require_GET
 def home(request):
     featured = Product.objects.filter(stock__gt=0).order_by("-id")[:4]
-    return render(request, "storefront/home.html", {"featured": featured, **_cart_context(request.user)})
+    return render(
+        request,
+        "storefront/home.html",
+        {"featured": featured, **_cart_context(request.user)},
+    )
 
 
 @require_GET
@@ -80,11 +83,18 @@ def shop(request):
     query = request.GET.get("q", "").strip()
     category = request.GET.get("category", "").strip()
     if query:
-        products = products.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        products = products.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
     if category:
         products = products.filter(category=category)
     page = Paginator(products, 12).get_page(request.GET.get("page"))
-    context = {"page_obj": page, "query": query, "selected_category": category, "categories": Category.choices}
+    context = {
+        "page_obj": page,
+        "query": query,
+        "selected_category": category,
+        "categories": Category.choices,
+    }
     context.update(_cart_context(request.user))
     return render(request, "storefront/shop.html", context)
 
@@ -109,7 +119,9 @@ def register(request):
         auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         messages.success(request, "Conta criada com sucesso.")
         return redirect("storefront:shop")
-    return render(request, "storefront/register.html", {"form": form, **_oidc_context()})
+    return render(
+        request, "storefront/register.html", {"form": form, **_oidc_context()}
+    )
 
 
 @require_POST
@@ -122,8 +134,12 @@ def logout(request):
 @login_required
 @never_cache
 def account(request):
-    profile_form = ProfileForm(request.POST or None, instance=request.user, prefix="profile")
-    address_form = AddressForm(request.POST or None, instance=request.user.address, prefix="address")
+    profile_form = ProfileForm(
+        request.POST or None, instance=request.user, prefix="profile"
+    )
+    address_form = AddressForm(
+        request.POST or None, instance=request.user.address, prefix="address"
+    )
     if request.method == "POST" and profile_form.is_valid() and address_form.is_valid():
         with transaction.atomic():
             address = address_form.save()
@@ -149,14 +165,20 @@ def account(request):
 def cart_add(request, product_id):
     if not request.user.profile_complete:
         messages.warning(request, "Complete seu endereço antes de usar o carrinho.")
-        return redirect(f"{reverse('storefront:account')}?next={reverse('storefront:shop')}")
+        return redirect(
+            f"{reverse('storefront:account')}?next={reverse('storefront:shop')}"
+        )
     product = get_object_or_404(Product, pk=product_id)
     form = CartQuantityForm(request.POST)
     if not form.is_valid() or form.cleaned_data["quantities"] > product.stock:
         messages.error(request, "Quantidade indisponível.")
     else:
         try:
-            Cart.objects.create(user=request.user, product=product, quantities=form.cleaned_data["quantities"])
+            Cart.objects.create(
+                user=request.user,
+                product=product,
+                quantities=form.cleaned_data["quantities"],
+            )
             messages.success(request, "Produto adicionado ao carrinho.")
         except IntegrityError:
             messages.warning(request, "Esse produto já está no seu carrinho.")
@@ -172,7 +194,9 @@ def cart_detail(request):
 @login_required
 @require_POST
 def cart_update(request, cart_id):
-    item = get_object_or_404(Cart.objects.select_related("product"), pk=cart_id, user=request.user)
+    item = get_object_or_404(
+        Cart.objects.select_related("product"), pk=cart_id, user=request.user
+    )
     form = CartQuantityForm(request.POST)
     if form.is_valid() and form.cleaned_data["quantities"] <= item.product.stock:
         item.quantities = form.cleaned_data["quantities"]
@@ -209,14 +233,20 @@ def checkout(request):
 @login_required
 @never_cache
 def orders(request):
-    queryset = UserOrder.objects.select_related("products").filter(user=request.user).order_by("-buyed_at")
-    return render(request, "storefront/orders.html", {"orders": queryset, **_cart_context(request.user)})
+    queryset = UserOrder.objects.filter(user=request.user).order_by("-purchased_at")
+    return render(
+        request,
+        "storefront/orders.html",
+        {"orders": queryset, **_cart_context(request.user)},
+    )
 
 
 @login_required
 @never_cache
 def partner_apply(request):
-    pending = PartnerApplication.objects.filter(user=request.user, status=PartnerApplication.Status.PENDING).first()
+    pending = PartnerApplication.objects.filter(
+        user=request.user, status=PartnerApplication.Status.PENDING
+    ).first()
     form = PartnerApplicationForm(request.POST or None)
     if request.method == "POST":
         if request.user.is_seller:
@@ -230,7 +260,11 @@ def partner_apply(request):
             application.save()
             messages.success(request, "Solicitação enviada para análise.")
             return redirect("storefront:partner_apply")
-    return render(request, "storefront/partner_apply.html", {"form": form, "pending": pending, **_cart_context(request.user)})
+    return render(
+        request,
+        "storefront/partner_apply.html",
+        {"form": form, "pending": pending, **_cart_context(request.user)},
+    )
 
 
 def _require_seller(user):
@@ -243,8 +277,21 @@ def _require_seller(user):
 def seller_dashboard(request):
     _require_seller(request.user)
     products = Product.objects.filter(user=request.user)
-    sales = UserOrder.objects.select_related("products", "user").filter(products__user=request.user).order_by("-buyed_at")
-    return render(request, "storefront/seller.html", {"products": products, "sales": sales, "statuses": OrderStatus.choices, **_cart_context(request.user)})
+    sales = (
+        UserOrder.objects.select_related("user")
+        .filter(seller=request.user)
+        .order_by("-purchased_at")
+    )
+    return render(
+        request,
+        "storefront/seller.html",
+        {
+            "products": products,
+            "sales": sales,
+            "statuses": OrderStatus.choices,
+            **_cart_context(request.user),
+        },
+    )
 
 
 @login_required
@@ -258,14 +305,22 @@ def seller_product_create(request):
         product.save()
         messages.success(request, "Produto cadastrado.")
         return redirect("storefront:seller")
-    return render(request, "storefront/product_form.html", {"form": form, **_cart_context(request.user)})
+    return render(
+        request,
+        "storefront/product_form.html",
+        {"form": form, **_cart_context(request.user)},
+    )
 
 
 @login_required
 @require_POST
 def seller_order_status(request, order_id):
     _require_seller(request.user)
-    queryset = UserOrder.objects.all() if request.user.is_staff else UserOrder.objects.filter(products__user=request.user)
+    queryset = (
+        UserOrder.objects.all()
+        if request.user.is_staff
+        else UserOrder.objects.filter(seller=request.user)
+    )
     order = get_object_or_404(queryset, pk=order_id)
     status = request.POST.get("status")
     if status not in OrderStatus.values:
@@ -281,7 +336,9 @@ def oidc_login(request):
     if client is None:
         messages.error(request, "Login OIDC não está configurado.")
         return redirect("storefront:login")
-    request.session["oidc_link"] = request.GET.get("link") == "1" and request.user.is_authenticated
+    request.session["oidc_link"] = (
+        request.GET.get("link") == "1" and request.user.is_authenticated
+    )
     redirect_uri = settings.OIDC_REDIRECT_URI or request.build_absolute_uri(
         reverse("storefront:oidc_callback")
     )
@@ -297,7 +354,12 @@ def oidc_login(request):
 
 
 def _unique_username(seed):
-    base = "".join(character for character in seed if character.isalnum() or character in "._-")[:40] or "user"
+    base = (
+        "".join(
+            character for character in seed if character.isalnum() or character in "._-"
+        )[:40]
+        or "user"
+    )
     candidate = base
     counter = 1
     while User.objects.filter(username=candidate).exists():
@@ -317,29 +379,46 @@ def oidc_callback(request):
         messages.error(request, "Não foi possível validar a identidade externa.")
         return redirect("storefront:login")
 
-    if claims.get("email_verified") is not True or not claims.get("sub") or not claims.get("email"):
+    if (
+        claims.get("email_verified") is not True
+        or not claims.get("sub")
+        or not claims.get("email")
+    ):
         messages.error(request, "O provedor deve confirmar um e-mail verificado.")
         return redirect("storefront:login")
 
     provider = settings.OIDC_PROVIDER_NAME
-    identity = OIDCIdentity.objects.select_related("user").filter(provider=provider, subject=claims["sub"]).first()
+    identity = (
+        OIDCIdentity.objects.select_related("user")
+        .filter(provider=provider, subject=claims["sub"])
+        .first()
+    )
     linking = request.session.pop("oidc_link", False)
     if linking and request.user.is_authenticated:
         if identity and identity.user_id != request.user.id:
             messages.error(request, "Essa identidade já pertence a outra conta.")
         else:
-            OIDCIdentity.objects.get_or_create(provider=provider, subject=claims["sub"], defaults={"user": request.user})
+            OIDCIdentity.objects.get_or_create(
+                provider=provider,
+                subject=claims["sub"],
+                defaults={"user": request.user},
+            )
             messages.success(request, "Identidade externa vinculada.")
         return redirect("storefront:account")
 
     if identity:
         user = identity.user
     elif User.objects.filter(email__iexact=claims["email"]).exists():
-        messages.error(request, "Já existe uma conta com esse e-mail. Entre localmente e vincule o provedor no perfil.")
+        messages.error(
+            request,
+            "Já existe uma conta com esse e-mail. Entre localmente e vincule o provedor no perfil.",
+        )
         return redirect("storefront:login")
     else:
         user = User.objects.create(
-            username=_unique_username(claims.get("preferred_username") or claims["email"].split("@")[0]),
+            username=_unique_username(
+                claims.get("preferred_username") or claims["email"].split("@")[0]
+            ),
             email=claims["email"],
             first_name=claims.get("given_name") or "Novo",
             last_name=claims.get("family_name") or "Usuário",

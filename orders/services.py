@@ -39,12 +39,26 @@ def checkout_cart(user):
         product = products[item.product_id]
         product.stock -= item.quantities
         product.save(update_fields=("stock",))
-        orders.append(UserOrder.objects.create(products=product, user=user))
+        orders.append(
+            UserOrder.objects.create(
+                user=user,
+                product=product,
+                seller=product.user,
+                quantity=item.quantities,
+                unit_price=product.value,
+                product_name=product.name,
+                product_category=product.category,
+                product_image=product.image_product,
+            )
+        )
 
     Cart.objects.filter(user=user).delete()
 
     def send_confirmation():
-        details = ", ".join(f"#{order.id} - {order.products.name}" for order in orders)
+        details = ", ".join(
+            f"#{order.id} - {order.product_name} ({order.quantity} × R$ {order.unit_price})"
+            for order in orders
+        )
         try:
             send_mail(
                 "Confirmação de Ordem de Compra",

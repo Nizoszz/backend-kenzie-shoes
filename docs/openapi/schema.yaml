@@ -667,6 +667,41 @@ components:
           allOf:
           - $ref: '#/components/schemas/StatusEnum'
           readOnly: true
+        purchased_at:
+          type: string
+          format: date-time
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+          nullable: true
+        quantity:
+          type: integer
+          readOnly: true
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        total_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        product_category:
+          type: string
+          readOnly: true
+        product_image:
+          type: string
+          format: uri
+          readOnly: true
+        seller:
+          type: integer
+          readOnly: true
+          nullable: true
         buyed_at:
           type: string
           format: date-time
@@ -681,8 +716,17 @@ components:
       required:
       - buyed_at
       - id
+      - product
+      - product_category
+      - product_image
+      - product_name
       - products
+      - purchased_at
+      - quantity
+      - seller
       - status
+      - total_price
+      - unit_price
       - user_buy
     OrderStatus:
       type: object
@@ -692,6 +736,41 @@ components:
           readOnly: true
         status:
           $ref: '#/components/schemas/StatusEnum'
+        purchased_at:
+          type: string
+          format: date-time
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+          nullable: true
+        quantity:
+          type: integer
+          readOnly: true
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        total_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        product_category:
+          type: string
+          readOnly: true
+        product_image:
+          type: string
+          format: uri
+          readOnly: true
+        seller:
+          type: integer
+          readOnly: true
+          nullable: true
         buyed_at:
           type: string
           format: date-time
@@ -706,7 +785,16 @@ components:
       required:
       - buyed_at
       - id
+      - product
+      - product_category
+      - product_image
+      - product_name
       - products
+      - purchased_at
+      - quantity
+      - seller
+      - total_price
+      - unit_price
       - user_buy
     PaginatedOrderList:
       type: object
@@ -762,6 +850,41 @@ components:
           readOnly: true
         status:
           $ref: '#/components/schemas/StatusEnum'
+        purchased_at:
+          type: string
+          format: date-time
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+          nullable: true
+        quantity:
+          type: integer
+          readOnly: true
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        total_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        product_category:
+          type: string
+          readOnly: true
+        product_image:
+          type: string
+          format: uri
+          readOnly: true
+        seller:
+          type: integer
+          readOnly: true
+          nullable: true
         buyed_at:
           type: string
           format: date-time

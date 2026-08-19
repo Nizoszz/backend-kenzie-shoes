@@ -1,15 +1,17 @@
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsAccountOwner
-from rest_framework.pagination import PageNumberPagination
-from .serializers import OrderSerializer, OrderStatusSerializer
-from .models import UserOrder
-from users.models import User
-from .permissions import IsSellerUser
-from .services import CheckoutError, checkout_cart
 import logging
+
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from users.permissions import IsAccountOwner
+
+from .models import UserOrder
+from .permissions import IsSellerUser
+from .serializers import OrderSerializer, OrderStatusSerializer
+from .services import CheckoutError, checkout_cart
 
 security_logger = logging.getLogger("commerce.security")
 
@@ -45,10 +47,7 @@ class OrderDetailView(UpdateAPIView):
 
     def perform_update(self, serializer):
         order = self.queryset.get(id=self.kwargs.get("pk"))
-        if (
-            not self.request.user.is_staff
-            and order.products.user_id != self.request.user.id
-        ):
+        if not self.request.user.is_staff and order.seller_id != self.request.user.id:
             raise PermissionDenied("You do not have permission to perform this action.")
         serializer.save()
         security_logger.info(
@@ -86,4 +85,4 @@ class SellOrderView(ListAPIView):
     def get_queryset(self):
         if self.request.user.is_staff:
             return self.queryset
-        return self.queryset.filter(products__user=self.request.user)
+        return self.queryset.filter(seller=self.request.user)

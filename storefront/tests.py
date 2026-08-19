@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
@@ -5,7 +7,6 @@ from django.test import RequestFactory
 
 from cart.models import Cart
 from orders.models import UserOrder
-from products.models import Product
 from users.admin import PartnerApplicationAdmin
 from users.models import OIDCIdentity, PartnerApplication
 
@@ -32,7 +33,9 @@ def test_login_explains_when_oidc_is_not_configured(client, settings):
 
 
 def test_login_exposes_configured_oidc_provider(client, settings):
-    settings.OIDC_SERVER_METADATA_URL = "https://identity.example/.well-known/openid-configuration"
+    settings.OIDC_SERVER_METADATA_URL = (
+        "https://identity.example/.well-known/openid-configuration"
+    )
     settings.OIDC_CLIENT_ID = "commerce-web"
     settings.OIDC_PROVIDER_NAME = "Empresa ID"
     response = client.get("/login/")
@@ -91,7 +94,9 @@ def test_cart_is_scoped_and_checkout_uses_shared_service(client, buyer, product)
     item = Cart.objects.get(user=buyer)
     assert client.post(f"/cart/{item.id}/update/", {"quantities": 3}).status_code == 302
     assert client.post("/checkout/").status_code == 302
-    assert UserOrder.objects.filter(user=buyer, products=product).exists()
+    order = UserOrder.objects.get(user=buyer, product=product)
+    assert order.quantity == 3
+    assert order.unit_price == Decimal(str(product.value))
     product.refresh_from_db()
     assert product.stock == 7
 
@@ -99,7 +104,12 @@ def test_cart_is_scoped_and_checkout_uses_shared_service(client, buyer, product)
 @pytest.mark.django_db
 def test_partner_application_requires_admin_approval(client, buyer, make_user):
     client.force_login(buyer)
-    assert client.post("/partner/apply/", {"message": "Tenho uma loja de calçados autorais."}).status_code == 302
+    assert (
+        client.post(
+            "/partner/apply/", {"message": "Tenho uma loja de calçados autorais."}
+        ).status_code
+        == 302
+    )
     application = PartnerApplication.objects.get(user=buyer)
     assert application.status == PartnerApplication.Status.PENDING
     assert not buyer.is_seller
@@ -107,7 +117,9 @@ def test_partner_application_requires_admin_approval(client, buyer, make_user):
     admin_user = make_user(username="admin-review", is_staff=True, is_superuser=True)
     request = RequestFactory().post("/admin/")
     request.user = admin_user
-    PartnerApplicationAdmin(PartnerApplication, AdminSite()).approve(request, PartnerApplication.objects.filter(pk=application.pk))
+    PartnerApplicationAdmin(PartnerApplication, AdminSite()).approve(
+        request, PartnerApplication.objects.filter(pk=application.pk)
+    )
     buyer.refresh_from_db()
     assert buyer.is_seller
 
@@ -155,7 +167,13 @@ def test_oidc_login_uses_configured_callback(client, monkeypatch, settings):
 
 @pytest.mark.django_db
 def test_oidc_creates_incomplete_user_without_local_password(client, monkeypatch):
-    claims = {"sub": "oidc-123", "email": "oidc@example.com", "email_verified": True, "given_name": "OIDC", "family_name": "User"}
+    claims = {
+        "sub": "oidc-123",
+        "email": "oidc@example.com",
+        "email_verified": True,
+        "given_name": "OIDC",
+        "family_name": "User",
+    }
     monkeypatch.setattr("storefront.views.oidc_client", lambda: FakeOIDCClient(claims))
     response = client.get("/auth/oidc/callback/")
     assert response.status_code == 302
@@ -168,12 +186,16 @@ def test_oidc_creates_incomplete_user_without_local_password(client, monkeypatch
 @pytest.mark.django_db
 def test_oidc_rejects_unverified_email_and_email_collision(client, monkeypatch, buyer):
     unverified = {"sub": "bad", "email": "bad@example.com", "email_verified": False}
-    monkeypatch.setattr("storefront.views.oidc_client", lambda: FakeOIDCClient(unverified))
+    monkeypatch.setattr(
+        "storefront.views.oidc_client", lambda: FakeOIDCClient(unverified)
+    )
     assert client.get("/auth/oidc/callback/").status_code == 302
     assert not User.objects.filter(email="bad@example.com").exists()
 
     collision = {"sub": "collision", "email": buyer.email, "email_verified": True}
-    monkeypatch.setattr("storefront.views.oidc_client", lambda: FakeOIDCClient(collision))
+    monkeypatch.setattr(
+        "storefront.views.oidc_client", lambda: FakeOIDCClient(collision)
+    )
     client.get("/auth/oidc/callback/")
     assert not OIDCIdentity.objects.filter(subject="collision").exists()
 

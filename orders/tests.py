@@ -1,9 +1,24 @@
+from decimal import Decimal
+
 import pytest
 from django.core import mail
 
 from cart.models import Cart
 from orders.models import UserOrder
 from products.models import Product
+
+
+def create_order(*, user, product, quantity=1):
+    return UserOrder.objects.create(
+        user=user,
+        product=product,
+        seller=product.user,
+        quantity=quantity,
+        unit_price=product.value,
+        product_name=product.name,
+        product_category=product.category,
+        product_image=product.image_product,
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -31,6 +46,11 @@ def test_checkout_updates_stock_clears_cart_and_sends_email(
     product.refresh_from_db()
     second.refresh_from_db()
     assert (product.stock, second.stock) == (8, 2)
+    first_order = UserOrder.objects.get(product=product)
+    assert first_order.quantity == 2
+    assert first_order.unit_price == product.value
+    assert first_order.product_name == product.name
+    assert first_order.total_price == product.value * 2
     assert len(mail.outbox) == 1
 
 
@@ -84,8 +104,8 @@ def test_buyer_cannot_choose_order_status(authenticated_client, buyer, product):
 @pytest.mark.django_db
 def test_buy_and_sell_lists_are_scoped(authenticated_client, buyer, product, make_user):
     other_buyer = make_user()
-    own_order = UserOrder.objects.create(user=buyer, products=product)
-    UserOrder.objects.create(user=other_buyer, products=product)
+    own_order = create_order(user=buyer, product=product)
+    create_order(user=other_buyer, product=product)
     buy_response = authenticated_client(buyer).get("/api/users/buyorders/")
     assert [item["id"] for item in buy_response.data["results"]] == [own_order.id]
     sell_response = authenticated_client(product.user).get("/api/users/sellorders/")
@@ -96,7 +116,7 @@ def test_buy_and_sell_lists_are_scoped(authenticated_client, buyer, product, mak
 def test_only_product_seller_can_update_order(
     authenticated_client, buyer, product, make_user
 ):
-    order = UserOrder.objects.create(user=buyer, products=product)
+    order = create_order(user=buyer, product=product)
     intruder = make_user(is_seller=True)
     assert (
         authenticated_client(intruder)
@@ -108,6 +128,46 @@ def test_only_product_seller_can_update_order(
         f"/api/users/orders/{order.id}/", {"status": "Entregue"}, format="json"
     )
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_order_snapshot_survives_product_changes_and_deletion(buyer, product):
+    order = create_order(user=buyer, product=product, quantity=3)
+    original_name = product.name
+    original_price = Decimal(str(product.value))
+    seller = product.user
+
+    product.name = "Nome alterado depois da compra"
+    product.value = "999.99"
+    product.save(update_fields=("name", "value"))
+    product.delete()
+
+    order.refresh_from_db()
+    assert order.product is None
+    assert order.seller == seller
+    assert order.product_name == original_name
+    assert order.unit_price == original_price
+    assert order.quantity == 3
+    assert order.total_price == original_price * 3
+
+
+@pytest.mark.django_db
+def test_order_api_keeps_legacy_aliases_and_exposes_canonical_snapshot(
+    authenticated_client, buyer, product
+):
+    order = create_order(user=buyer, product=product, quantity=2)
+
+    response = authenticated_client(buyer).get("/api/users/buyorders/")
+    payload = response.data["results"][0]
+
+    assert payload["id"] == order.id
+    assert payload["product"] == product.id
+    assert payload["products"] == product.id
+    assert payload["purchased_at"] == payload["buyed_at"]
+    assert payload["quantity"] == 2
+    expected_price = Decimal(str(product.value))
+    assert payload["unit_price"] == f"{expected_price:.2f}"
+    assert payload["total_price"] == f"{expected_price * 2:.2f}"
 
 
 # Create your tests here.
