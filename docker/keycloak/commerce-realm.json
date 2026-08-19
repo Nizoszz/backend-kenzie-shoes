@@ -1,0 +1,69 @@
+{
+  "realm": "commerce",
+  "displayName": "Django Commerce",
+  "enabled": true,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "rememberMe": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "clients": [
+    {
+      "clientId": "commerce-web",
+      "name": "Django Commerce Web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:8000/auth/oidc/callback/",
+        "http://localhost:8000/auth/oidc/callback/"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:8000",
+        "http://localhost:8000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "organization",
+        "microprofile-jwt"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "cliente",
+      "email": "cliente@example.com",
+      "emailVerified": true,
+      "firstName": "Cliente",
+      "lastName": "Demonstração",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Cliente123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

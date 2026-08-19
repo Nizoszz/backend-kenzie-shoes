@@ -1,0 +1,27 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: keycloak-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: local-admin-password
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/commerce-realm.json:/opt/keycloak/data/import/commerce-realm.json:ro
+
+  postgres-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: commerce_test
+      POSTGRES_USER: commerce
+      POSTGRES_PASSWORD: commerce
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U commerce -d commerce_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    tmpfs:
+      - /var/lib/postgresql/data
