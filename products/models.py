@@ -32,3 +32,6 @@ class Product(models.Model):
                 condition=models.Q(stock__gte=0), name="product_stock_gte_0"
             )
         ]
+
+    def __str__(self):
+        return self.name

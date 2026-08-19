@@ -8,3 +8,6 @@ class Address(models.Model):
     zipcode = models.CharField(max_length=10)
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=2)
+
+    def __str__(self):
+        return f"{self.street}, {self.number} - {self.city}/{self.state}"

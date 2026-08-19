@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import UserView, UserDetailView
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenRefreshView
-from orders.views import OrderView, OrderDetailView, BuyOrderView, SellOrderView
-from .views import LoginView
+
+from orders.views import BuyOrderView, OrderDetailView, OrderView, SellOrderView
+
+from .views import LoginView, UserDetailView, UserView
 
 urlpatterns = [
     path("users/", UserView.as_view()),

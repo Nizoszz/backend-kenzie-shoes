@@ -25,8 +25,16 @@ urlpatterns = [
     path("orders/", views.orders, name="orders"),
     path("partner/apply/", views.partner_apply, name="partner_apply"),
     path("seller/", views.seller_dashboard, name="seller"),
-    path("seller/products/new/", views.seller_product_create, name="seller_product_create"),
-    path("seller/orders/<int:order_id>/status/", views.seller_order_status, name="seller_order_status"),
+    path(
+        "seller/products/new/",
+        views.seller_product_create,
+        name="seller_product_create",
+    ),
+    path(
+        "seller/orders/<int:order_id>/status/",
+        views.seller_order_status,
+        name="seller_order_status",
+    ),
     path("auth/oidc/login/", views.oidc_login, name="oidc_login"),
     path("auth/oidc/callback/", views.oidc_callback, name="oidc_callback"),
 ]

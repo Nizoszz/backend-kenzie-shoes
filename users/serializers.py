@@ -1,7 +1,9 @@
-from rest_framework.validators import UniqueValidator
-from addresses.serializers import AddressSerializer
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+
 from addresses.models import Address
+from addresses.serializers import AddressSerializer
+
 from .models import User
 
 

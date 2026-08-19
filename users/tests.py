@@ -68,6 +68,7 @@ def test_registration_cannot_self_promote_to_seller(api_client):
 
 def test_admin_command_requires_explicit_password():
     from django.core.management.base import CommandError
+
     from users.management.commands.create_admin import Command
 
     with pytest.raises(CommandError, match="Password is required"):
@@ -95,7 +96,9 @@ def test_refresh_token_rotates_and_logout_blacklists_it(api_client, buyer):
     assert refresh.status_code == 200
     assert refresh.data["refresh"] != login.data["refresh"]
     assert (
-        api_client.post("/api/users/logout/", {"refresh": refresh.data["refresh"]}).status_code
+        api_client.post(
+            "/api/users/logout/", {"refresh": refresh.data["refresh"]}
+        ).status_code
         == 200
     )
     assert (

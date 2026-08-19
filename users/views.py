@@ -1,9 +1,10 @@
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
-from .models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .serializers import UserSerializer
-from .permissions import IsAccountOwner
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from .models import User
+from .permissions import IsAccountOwner
+from .serializers import UserSerializer
 
 
 class LoginView(TokenObtainPairView):

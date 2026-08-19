@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 
 class User(AbstractUser):
@@ -18,7 +18,9 @@ class User(AbstractUser):
         blank=True,
     )
 
-    product = models.ManyToManyField("products.Product", through="cart.Cart", related_name="cart")
+    product = models.ManyToManyField(
+        "products.Product", through="cart.Cart", related_name="cart"
+    )
 
     @property
     def profile_complete(self):
@@ -28,7 +30,9 @@ class User(AbstractUser):
 class OIDCIdentity(models.Model):
     provider = models.CharField(max_length=100)
     subject = models.CharField(max_length=255)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="oidc_identities")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="oidc_identities"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -38,6 +42,9 @@ class OIDCIdentity(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f"{self.provider}:{self.subject}"
+
 
 class PartnerApplication(models.Model):
     class Status(models.TextChoices):
@@ -45,11 +52,19 @@ class PartnerApplication(models.Model):
         APPROVED = "approved", "Aprovada"
         REJECTED = "rejected", "Rejeitada"
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="partner_applications")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="partner_applications"
+    )
     message = models.TextField(max_length=1000)
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(
+        max_length=10, choices=Status.choices, default=Status.PENDING
+    )
     reviewer = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_partner_applications"
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_partner_applications",
     )
     review_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,3 +79,6 @@ class PartnerApplication(models.Model):
                 name="unique_pending_partner_application",
             )
         ]
+
+    def __str__(self):
+        return f"{self.user} - {self.get_status_display()}"

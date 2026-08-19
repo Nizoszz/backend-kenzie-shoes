@@ -1,13 +1,16 @@
 from rest_framework import serializers
-from .models import Product
-from users.serializers import UserSerializer
-from cart.serializers import ProductCartSerializer
 from rest_framework.validators import UniqueValidator
+
+from cart.serializers import ProductCartSerializer
+from users.serializers import UserSerializer
+
+from .models import Product
 
 
 class ProductSerializer(serializers.ModelSerializer):
-
-    name = serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Product.objects.all())],
+    name = serializers.CharField(
+        max_length=50,
+        validators=[UniqueValidator(queryset=Product.objects.all())],
     )
 
     class Meta:

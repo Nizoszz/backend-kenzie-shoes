@@ -73,7 +73,14 @@ class AddressForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Address
         fields = ("street", "number", "add_on", "zipcode", "city", "state")
-        labels = {"street": "Rua", "number": "Número", "add_on": "Complemento", "zipcode": "CEP", "city": "Cidade", "state": "UF"}
+        labels = {
+            "street": "Rua",
+            "number": "Número",
+            "add_on": "Complemento",
+            "zipcode": "CEP",
+            "city": "Cidade",
+            "state": "UF",
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -96,7 +103,14 @@ class ProductForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Product
         fields = ("name", "value", "category", "stock", "description", "image_product")
-        labels = {"name": "Nome", "value": "Preço", "category": "Categoria", "stock": "Estoque", "description": "Descrição", "image_product": "URL da imagem"}
+        labels = {
+            "name": "Nome",
+            "value": "Preço",
+            "category": "Categoria",
+            "stock": "Estoque",
+            "description": "Descrição",
+            "image_product": "URL da imagem",
+        }
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
 
     def __init__(self, *args, **kwargs):

@@ -1,6 +1,7 @@
 from rest_framework import permissions
+from rest_framework.views import Request, View
+
 from .models import Cart
-from rest_framework.views import *
 
 
 class IsBuyAccountOwner(permissions.BasePermission):
