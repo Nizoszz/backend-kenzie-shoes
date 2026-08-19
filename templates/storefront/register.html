@@ -1,0 +1,3 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Criar conta — Kenzie Shoes{% endblock %}
+{% block content %}<section class="section shell form-page"><div class="form-intro"><span class="eyebrow">Comece agora</span><h1>Crie sua conta</h1><p>Seus dados de endereço serão usados para preparar seus pedidos.</p></div><form method="post" class="stack-form form-card">{% csrf_token %}{{ form.as_div }}<button class="button button-wide" type="submit">Criar conta</button>{% if oidc_enabled %}<p>Prefere login federado? <a href="{% url 'storefront:oidc_login' %}">Continuar com {{ oidc_provider_name }}</a></p>{% else %}<p class="oidc-status">Login externo ainda não configurado pelo administrador.</p>{% endif %}</form></section>{% endblock %}

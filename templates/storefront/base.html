@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Kenzie Shoes — calçados para cada passo da sua história.">
+  <title>{% block title %}Kenzie Shoes{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'storefront/css/storefront.css' %}">
+  <link rel="stylesheet" href="{% static 'storefront/css/overrides.css' %}">
+  <script src="{% static 'storefront/js/storefront.js' %}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="shell nav-wrap">
+      <a class="brand" href="{% url 'storefront:home' %}" aria-label="Kenzie Shoes — início"><span>K</span> Kenzie Shoes</a>
+      <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="main-nav">Menu</button>
+      <nav id="main-nav" class="main-nav" aria-label="Navegação principal" data-menu>
+        <a href="{% url 'storefront:shop' %}">Loja</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'storefront:orders' %}">Pedidos</a>
+          {% if user.is_seller or user.is_staff %}<a href="{% url 'storefront:seller' %}">Vender</a>{% else %}<a href="{% url 'storefront:partner_apply' %}">Seja parceiro</a>{% endif %}
+          <a href="{% url 'storefront:account' %}">Minha conta</a>
+          <button class="cart-trigger" type="button" data-cart-open>Carrinho <span>{{ cart_count|default:0 }}</span></button>
+          <form action="{% url 'storefront:logout' %}" method="post">{% csrf_token %}<button class="link-button" type="submit">Sair</button></form>
+        {% else %}
+          <a href="{% url 'storefront:login' %}">Entrar</a>
+          <a class="button button-small" href="{% url 'storefront:register' %}">Criar conta</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="shell messages" aria-live="polite">
+      {% for message in messages %}<div class="message message-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <main id="content">{% block content %}{% endblock %}</main>
+
+  {% if user.is_authenticated %}
+  <aside class="cart-drawer" aria-label="Resumo do carrinho" aria-hidden="true" data-cart-drawer>
+    <div class="drawer-head"><h2>Seu carrinho</h2><button type="button" data-cart-close aria-label="Fechar carrinho">×</button></div>
+    {% if cart_items %}
+      <ul class="mini-cart">
+      {% for item in cart_items %}<li><img src="{{ item.product.image_product }}" alt=""><div><strong>{{ item.product.name }}</strong><span>{{ item.quantities }} × R$ {{ item.product.value }}</span></div></li>{% endfor %}
+      </ul>
+      <div class="drawer-total"><span>Total</span><strong>R$ {{ cart_total }}</strong></div>
+      <a class="button button-wide" href="{% url 'storefront:cart' %}">Revisar carrinho</a>
+    {% else %}<div class="empty-state"><p>Seu carrinho está vazio.</p><a href="{% url 'storefront:shop' %}">Explorar produtos</a></div>{% endif %}
+  </aside>
+  <button class="drawer-backdrop" type="button" aria-label="Fechar carrinho" data-cart-close></button>
+  {% endif %}
+
+  <footer class="site-footer"><div class="shell footer-grid"><div><div class="brand brand-light"><span>K</span> Kenzie Shoes</div><p>Design, conforto e movimento em cada passo.</p></div><div><strong>Explore</strong><a href="{% url 'storefront:shop' %}">Catálogo</a><a href="{% url 'storefront:partner_apply' %}">Parcerias</a></div><div><strong>Atendimento</strong><p>Seg–Sex, 9h às 18h</p><p>contato@kenzieshoes.com</p></div></div></footer>
+</body>
+</html>

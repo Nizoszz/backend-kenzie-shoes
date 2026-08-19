@@ -1,0 +1,32 @@
+.auth-visual {
+  background-image:
+    linear-gradient(180deg, transparent 35%, rgba(14, 14, 12, .78)),
+    url("../images/running-shoes.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.hero-photo { position: relative; min-height: 540px; margin: 0; overflow: hidden; border-radius: 36px; box-shadow: var(--shadow); background: #e9dac7; }
+.hero-photo img { width: 100%; height: 100%; min-height: 540px; object-fit: cover; object-position: 60% center; }
+.hero-photo figcaption { position: absolute; right: 24px; bottom: 24px; padding: 15px 19px; border-radius: 16px; background: rgba(255,255,255,.9); box-shadow: var(--shadow); font-weight: 700; backdrop-filter: blur(10px); }
+.editorial-banner { position: relative; min-height: 440px; margin-bottom: 78px; overflow: hidden; border-radius: 30px; background: #151512; color: white; }
+.editorial-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.editorial-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 25%, rgba(10,10,9,.15) 50%, rgba(10,10,9,.92)); }
+.editorial-banner > div { position: relative; z-index: 1; width: min(480px, 48%); margin-left: auto; padding: 72px 58px; }
+.editorial-banner h2 { font-size: clamp(2rem, 4vw, 3.6rem); }
+.button-disabled { cursor: not-allowed; opacity: .5; }
+.button-disabled:hover { transform: none; background: transparent; }
+.oidc-status { margin: 10px 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
+.oidc-status code { overflow-wrap: anywhere; }
+.oidc-status-ready { color: #587100; font-weight: 750; }
+
+@media (max-width: 950px) {
+  .hero-photo, .hero-photo img { min-height: 420px; }
+}
+
+@media (max-width: 720px) {
+  .hero-photo, .hero-photo img { min-height: 360px; }
+  .editorial-banner { min-height: 500px; }
+  .editorial-banner::after { background: linear-gradient(180deg, transparent 10%, rgba(10,10,9,.88) 70%); }
+  .editorial-banner > div { width: 100%; margin-top: 180px; padding: 38px 25px; }
+}
