@@ -10,5 +10,6 @@ class IsAccountOwner(permissions.BasePermission):
 
 class IsAdminReadOnly(permissions.BasePermission):
     def has_permission(self, request: Request, view: View) -> bool:
-        print(request.method in permissions.SAFE_METHODS or request.user.is_staff)
-
+        return request.method in permissions.SAFE_METHODS or (
+            request.user.is_authenticated and request.user.is_staff
+        )

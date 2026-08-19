@@ -3,16 +3,14 @@ from addresses.serializers import AddressSerializer
 from rest_framework import serializers
 from addresses.models import Address
 from .models import User
-from cart.models import Cart
 
 
 class UserSerializer(serializers.ModelSerializer):
     address = AddressSerializer()
-    
+
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())],
     )
-    
 
     def create(self, validated_data: dict) -> User:
         address_create = validated_data.pop("address")
@@ -26,8 +24,11 @@ class UserSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         if address is not None:
-            for key, value in address.items():
-                setattr(instance.address, key, value)
+            if instance.address is None:
+                instance.address = Address.objects.create(**address)
+            else:
+                for key, value in address.items():
+                    setattr(instance.address, key, value)
                 instance.address.save()
         if password is not None:
             instance.set_password(password)
@@ -49,10 +50,8 @@ class UserSerializer(serializers.ModelSerializer):
             "is_seller",
             "image_user",
             "address",
-            "user_cart"
+            "user_cart",
         ]
 
-        depth = 1
-
-        read_only_fields = ["id", "is_superuser"]
+        read_only_fields = ["id", "is_superuser", "is_seller", "user_cart"]
         extra_kwargs = {"password": {"write_only": True}}

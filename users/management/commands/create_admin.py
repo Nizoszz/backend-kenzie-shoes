@@ -34,7 +34,9 @@ class Command(BaseCommand):
         if not email:
             email = username + "@kenzieshoes.com"
         if not password:
-            password = "1234"
+            raise CommandError(
+                "Password is required. Use --password or a protected secret."
+            )
         if not address:
             address_create = {
                 "street": "Rua admin",

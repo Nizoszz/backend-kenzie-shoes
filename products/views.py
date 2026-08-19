@@ -14,7 +14,7 @@ class ProductView(ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminAndSellerCreateUpdatedDestroy]
     serializer_class = ProductSerializer
-    paginator_class = ProductPaginator
+    pagination_class = ProductPaginator
 
     def get_queryset(self):
         queryset = Product.objects.all()
@@ -27,16 +27,14 @@ class ProductView(ListCreateAPIView):
 
         return queryset
 
-    def perform_create(self, serializer) -> None:      
+    def perform_create(self, serializer) -> None:
         serializer.save(user=self.request.user)
 
 
 class ProductDetailView(RetrieveUpdateDestroyAPIView):
-    
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminAndSellerCreateUpdatedDestroy]
 
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
-    

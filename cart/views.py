@@ -1,5 +1,9 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.generics import CreateAPIView, get_object_or_404, RetrieveUpdateDestroyAPIView, RetrieveDestroyAPIView
+from rest_framework.generics import (
+    CreateAPIView,
+    get_object_or_404,
+    RetrieveUpdateDestroyAPIView,
+)
 from cart.serializers import ProductCartSerializer
 from .permissions import IsBuyAccountOwner
 from products.models import Product
@@ -17,13 +21,11 @@ class ProductCartView(CreateAPIView):
 
     def perform_create(self, serializer):
         product = get_object_or_404(Product, id=self.kwargs.get("pk"))
-        quantity = product.stock - self.request.data["quantities"]
-        cart = self.queryset.filter(product=product.id).count()
-        if cart != 0:
+        quantities = serializer.validated_data["quantities"]
+        if self.queryset.filter(product=product, user=self.request.user).exists():
             raise ValidationError({"detail": "Produto já inserido no carrinho"})
-        if quantity < 0:
+        if quantities > product.stock:
             raise ValidationError({"detail": "Quantidade de produto indisponível"})
-        self.check_object_permissions(self.request, product)
         serializer.save(product=product, user=self.request.user)
 
 
