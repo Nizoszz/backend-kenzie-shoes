@@ -2,6 +2,12 @@
 
 E-commerce construído com Django, Django REST Framework e PostgreSQL. O projeto oferece um site server-rendered com sessões e CSRF e mantém a API pública autenticada por JWT.
 
+## Autoria e origem
+
+Este fork é mantido e modernizado por **Andrew da Silva**. Ele deriva do projeto `Nizoszz/django-commerce-api`; as alterações deste fork incluem a modernização do domínio, segurança, testes, frontend Django Templates e integração OIDC. O histórico Git preserva a autoria do projeto-base e de cada contribuição posterior.
+
+Pedidos novos armazenam snapshots de quantidade, preço unitário e dados do produto. Na migração de pedidos anteriores a esse recurso, a quantidade assume `1`, pois o modelo legado não guardava a quantidade original; preço e identificação do produto são recuperados do catálogo existente durante a migração.
+
 ## Requisitos
 
 - Python 3.12+
@@ -79,6 +85,19 @@ docker compose down
 ```
 
 As credenciais padrão podem ser substituídas pelas variáveis `TEST_POSTGRES_DB`, `TEST_POSTGRES_USER`, `TEST_POSTGRES_PASSWORD`, `TEST_POSTGRES_HOST` e `TEST_POSTGRES_PORT`.
+
+## Qualidade e integração contínua
+
+A pipeline `.github/workflows/quality.yml` é executada em todo `push`, pull request e merge queue. Ela valida lint e formatação com Ruff, auditoria de dependências, checks do Django, migrações, OpenAPI, configurações de implantação e a suíte completa em PostgreSQL 17 com cobertura mínima de 80%.
+
+Execute as mesmas verificações de lint localmente antes de enviar alterações:
+
+```bash
+ruff check .
+ruff format --check .
+python manage.py check
+python manage.py makemigrations --check --dry-run
+```
 
 ## Verificações
 
