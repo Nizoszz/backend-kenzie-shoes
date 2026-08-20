@@ -24,6 +24,9 @@ def test_public_pages_render_and_dashboard_redirects(client, product):
     assert b"data-auto-filter-form" in response.content
     assert b"data-filter-search" in response.content
     assert b"data-filter-category" in response.content
+    assert b"Remover filtros" in response.content
+    assert b">Filtrar</" not in response.content
+    assert b"Remover filtros" not in client.get("/shop/").content
     assert client.get("/dashboard/").status_code == 302
 
 

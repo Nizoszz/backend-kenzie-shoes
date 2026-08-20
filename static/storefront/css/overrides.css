@@ -20,12 +20,15 @@
 .oidc-status code { overflow-wrap: anywhere; }
 .oidc-status-ready { color: #587100; font-weight: 750; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.filters { grid-template-columns: 2fr 1fr; }
+.filters.filters-active { grid-template-columns: 2fr 1fr auto; }
 
 @media (max-width: 950px) {
   .hero-photo, .hero-photo img { min-height: 420px; }
 }
 
 @media (max-width: 720px) {
+  .filters, .filters.filters-active { grid-template-columns: 1fr; }
   .hero-photo, .hero-photo img { min-height: 360px; }
   .editorial-banner { min-height: 500px; }
   .editorial-banner::after { background: linear-gradient(180deg, transparent 10%, rgba(10,10,9,.88) 70%); }
