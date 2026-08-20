@@ -108,15 +108,7 @@ docker build -t django-commerce-api .
 docker run --rm -p 8000:8000 --env-file .env django-commerce-api
 ```
 
-Após a pipeline de qualidade passar em `develop`, o workflow `.github/workflows/deploy.yml` publica no Docker Hub uma tag imutável `sha-<commit>` e a tag móvel `latest`; somente depois chama o Deploy Hook. Ele também pode ser iniciado manualmente.
-
-Configure em **GitHub → Settings → Secrets and variables → Actions**:
-
-- secret `DOCKERHUB_USERNAME`: usuário usado para autenticar no Docker Hub;
-- secret `DOCKERHUB_TOKEN`: access token do Docker Hub (não use a senha da conta);
-- variable `DOCKERHUB_IMAGE`: namespace e repositório da imagem, por exemplo `minhaempresa/django-commerce-api`.
-
-O usuário de autenticação e o namespace da imagem podem ser diferentes. O workflow não utiliza `github.actor` para o Docker Hub. Configure o Render como **Existing Image** apontando para `docker.io/<namespace>/<repository>:latest`. Se a imagem for privada, cadastre também no Render uma credencial do Docker Hub com permissão de leitura.
+Após a pipeline de qualidade passar em `develop`, o workflow `.github/workflows/deploy.yml` chama o Deploy Hook. O próprio Render clona a branch e constrói o `Dockerfile`, portanto não são necessárias credenciais do Docker Hub.
 
 No Render, desative Auto-Deploy para não duplicar implantações e defina o health check como `/health/`. Como o Pre-Deploy Command não está disponível em todos os planos, o container executa `python manage.py migrate --noinput` antes de iniciar o Gunicorn. No environment GitHub `production`, crie o secret `RENDER_DEPLOY_HOOK_URL` com o hook do serviço.
 
