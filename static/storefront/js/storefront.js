@@ -21,3 +21,26 @@ document.querySelectorAll("[data-cart-close]").forEach((button) => button.addEve
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") setDrawer(false);
 });
+
+const filterForm = document.querySelector("[data-auto-filter-form]");
+if (filterForm) {
+  const searchInput = filterForm.querySelector("[data-filter-search]");
+  const categoryInput = filterForm.querySelector("[data-filter-category]");
+  const filterStatus = filterForm.querySelector("[data-filter-status]");
+  let filterTimer;
+
+  const submitFilters = () => {
+    if (filterStatus) filterStatus.textContent = "Atualizando resultados";
+    filterForm.requestSubmit();
+  };
+
+  const debounceFilter = (delay) => {
+    window.clearTimeout(filterTimer);
+    if (filterStatus) filterStatus.textContent = "Aguardando pesquisa";
+    filterTimer = window.setTimeout(submitFilters, delay);
+  };
+
+  searchInput?.addEventListener("input", () => debounceFilter(400));
+  categoryInput?.addEventListener("change", () => debounceFilter(150));
+  filterForm.addEventListener("submit", () => window.clearTimeout(filterTimer));
+}

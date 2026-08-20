@@ -21,6 +21,9 @@ def test_public_pages_render_and_dashboard_redirects(client, product):
     response = client.get("/shop/?q=teste&category=Tênis")
     assert response.status_code == 200
     assert product.name.encode() in response.content
+    assert b"data-auto-filter-form" in response.content
+    assert b"data-filter-search" in response.content
+    assert b"data-filter-category" in response.content
     assert client.get("/dashboard/").status_code == 302
 
 
