@@ -1,7 +1,11 @@
 import pytest
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 
+from products.management.commands.seed_shoes import SHOES
 from products.models import Product
+from users.models import User
 
 
 @pytest.mark.django_db
@@ -45,6 +49,48 @@ def test_seller_cannot_change_another_sellers_product(
         f"/api/products/{product.id}/", {"stock": 1}, format="json"
     )
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_seed_shoes_creates_catalog_and_is_idempotent(capsys):
+    call_command("seed_shoes")
+
+    seller = User.objects.get(username="demo-seller")
+    assert seller.is_seller is True
+    assert seller.has_usable_password() is False
+    assert Product.objects.filter(user=seller).count() == len(SHOES)
+    assert all(
+        product.image_product.startswith("https://")
+        for product in Product.objects.all()
+    )
+
+    call_command("seed_shoes")
+
+    assert Product.objects.filter(user=seller).count() == len(SHOES)
+    assert "0 criados" in capsys.readouterr().out
+
+
+@pytest.mark.django_db
+def test_seed_shoes_does_not_reset_existing_stock():
+    call_command("seed_shoes")
+    product = Product.objects.get(name=SHOES[0]["name"])
+    product.stock = 1
+    product.save(update_fields=("stock",))
+
+    call_command("seed_shoes")
+
+    product.refresh_from_db()
+    assert product.stock == 1
+
+
+@pytest.mark.django_db
+def test_seed_shoes_does_not_promote_existing_buyer(buyer):
+    with pytest.raises(CommandError, match="não possui perfil de vendedor"):
+        call_command("seed_shoes", seller=buyer.username)
+
+    buyer.refresh_from_db()
+    assert buyer.is_seller is False
+    assert Product.objects.count() == 0
 
 
 # Create your tests here.

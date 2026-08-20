@@ -34,6 +34,14 @@ python manage.py collectstatic --noinput
 python manage.py runserver
 ```
 
+Para carregar um catálogo demonstrativo de calçados com imagens, execute:
+
+```bash
+python manage.py seed_shoes
+```
+
+O comando pode ser executado novamente sem duplicar produtos nem restaurar o estoque de itens existentes. Por padrão, ele cria o vendedor técnico `demo-seller` com senha inutilizável; use `--seller nome-do-vendedor` para atribuir o catálogo a outro vendedor já existente.
+
 ## Site
 
 As rotas principais são `/`, `/shop/`, `/login/`, `/register/`, `/account/`, `/cart/`, `/checkout/`, `/orders/`, `/partner/apply/` e `/seller/`. O site usa Django Templates, forms, sessões HttpOnly, CSRF e JavaScript sem dependências apenas para o menu e o carrinho lateral.
@@ -111,6 +119,8 @@ docker run --rm -p 8000:8000 --env-file .env django-commerce-api
 Após a pipeline de qualidade passar em `develop`, o workflow `.github/workflows/deploy.yml` chama o Deploy Hook. O próprio Render clona a branch e constrói o `Dockerfile`, portanto não são necessárias credenciais do Docker Hub.
 
 No Render, desative Auto-Deploy para não duplicar implantações e defina o health check como `/health/`. Como o Pre-Deploy Command não está disponível em todos os planos, o container executa `python manage.py migrate --noinput` antes de iniciar o Gunicorn. No environment GitHub `production`, crie o secret `RENDER_DEPLOY_HOOK_URL` com o hook do serviço.
+
+Para popular o PostgreSQL do Render, defina temporariamente `SEED_DEMO_PRODUCTS=true` nas variáveis do Web Service e faça um deploy. A inicialização executará `seed_shoes` depois das migrações e antes do Gunicorn. Após confirmar o catálogo, remova a variável ou altere-a para `false`; reexecuções não duplicam produtos nem restauram estoque existente. Se o plano oferecer Shell, o equivalente é executar uma única vez `python manage.py seed_shoes` diretamente no serviço.
 
 O Render sobe a nova instância ao lado da atual, testa sua saúde e então transfere o tráfego, realizando a troca blue/green sem indisponibilidade. Migrações devem ser retrocompatíveis durante essa janela (expand/migrate/contract). Para rollback, selecione no Render a tag imutável do commit anterior.
 
