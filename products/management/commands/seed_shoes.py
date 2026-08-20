@@ -45,7 +45,7 @@ SHOES = (
         "category": Category.BOTAS,
         "stock": 10,
         "description": "Bota resistente com solado tratorado para trilhas e uso urbano.",
-        "image_product": "https://images.unsplash.com/photo-1542838687-2b3e12dbf9d1?auto=format&fit=crop&w=900&q=80",
+        "image_product": "https://images.unsplash.com/photo-1605733160314-4fc7dac4bb16?auto=format&fit=crop&w=900&q=80",
     },
     {
         "name": "Bota Chelsea Couro",
@@ -93,7 +93,7 @@ SHOES = (
         "category": Category.CHINELOS_SANDALIAS,
         "stock": 28,
         "description": "Sandália leve com tiras ajustáveis e base anatômica.",
-        "image_product": "https://images.unsplash.com/photo-1603487742131-4160ec999306?auto=format&fit=crop&w=900&q=80",
+        "image_product": "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?auto=format&fit=crop&w=900&q=80",
     },
     {
         "name": "Chinelo Beach Soft",
@@ -114,6 +114,11 @@ class Command(BaseCommand):
             "--seller",
             default="demo-seller",
             help="Username do vendedor proprietário dos produtos.",
+        )
+        parser.add_argument(
+            "--refresh-images",
+            action="store_true",
+            help="Atualiza somente as imagens dos produtos que já existem.",
         )
 
     @transaction.atomic
@@ -138,17 +143,26 @@ class Command(BaseCommand):
             )
 
         created_count = 0
+        refreshed_count = 0
         skipped_count = 0
         for shoe in SHOES:
-            _, was_created = Product.objects.get_or_create(
+            product, was_created = Product.objects.get_or_create(
                 name=shoe["name"], defaults={**shoe, "user": seller}
             )
             created_count += was_created
+            if not was_created and options["refresh_images"]:
+                image = shoe["image_product"]
+                if product.image_product != image:
+                    product.image_product = image
+                    product.save(update_fields=("image_product",))
+                    refreshed_count += 1
+                    continue
             skipped_count += not was_created
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Catálogo populado: {created_count} criados, "
+                f"{refreshed_count} imagens atualizadas, "
                 f"{skipped_count} já existentes. Vendedor: {seller.username}."
             )
         )

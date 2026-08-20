@@ -23,4 +23,4 @@ USER django
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('PORT', '8000') + '/health/', timeout=3)"
-CMD ["sh", "-c", "python manage.py migrate --noinput && if [ \"${SEED_DEMO_PRODUCTS:-false}\" = \"true\" ]; then python manage.py seed_shoes; fi && exec gunicorn _core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --no-control-socket --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && if [ \"${SEED_DEMO_PRODUCTS:-false}\" = \"true\" ]; then python manage.py seed_shoes --refresh-images; fi && exec gunicorn _core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --no-control-socket --access-logfile - --error-logfile -"]

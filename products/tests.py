@@ -84,6 +84,21 @@ def test_seed_shoes_does_not_reset_existing_stock():
 
 
 @pytest.mark.django_db
+def test_seed_shoes_can_refresh_only_existing_images():
+    call_command("seed_shoes")
+    product = Product.objects.get(name=SHOES[0]["name"])
+    product.image_product = "https://example.com/old.jpg"
+    product.stock = 1
+    product.save(update_fields=("image_product", "stock"))
+
+    call_command("seed_shoes", refresh_images=True)
+
+    product.refresh_from_db()
+    assert product.image_product == SHOES[0]["image_product"]
+    assert product.stock == 1
+
+
+@pytest.mark.django_db
 def test_seed_shoes_does_not_promote_existing_buyer(buyer):
     with pytest.raises(CommandError, match="não possui perfil de vendedor"):
         call_command("seed_shoes", seller=buyer.username)
