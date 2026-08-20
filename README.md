@@ -151,4 +151,6 @@ Defina `DEBUG=false`, uma `SECRET_KEY` longa e aleatória e `ALLOWED_HOSTS` com 
 
 Os tokens de acesso expiram em 15 minutos. Refresh tokens são rotacionados e invalidados após o uso; use `/api/users/token/refresh/` para renovar e `/api/users/logout/` para invalidar uma sessão.
 
+Logins locais, JWT e administrativos são protegidos contra brute force por usuário e endereço IP. Após cinco falhas, o acesso recebe `429 Too Many Requests` por 15 minutos; os contadores ficam no PostgreSQL e são compartilhados entre os workers. Os limites podem ser ajustados por `AXES_FAILURE_LIMIT` e `AXES_COOLOFF_MINUTES`.
+
 A equivalência funcional com o projeto React de referência está documentada em [FRONTEND_REFERENCE_MATRIX.md](FRONTEND_REFERENCE_MATRIX.md).

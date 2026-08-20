@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth.hashers import check_password, identify_hasher, make_password
+from django.core.cache import cache
 
 
 def test_argon2_uses_a_unique_random_salt_with_expected_length():
@@ -110,13 +111,86 @@ def test_refresh_token_rotates_and_logout_blacklists_it(api_client, buyer):
 
 
 @pytest.mark.django_db
-def test_login_is_rate_limited(api_client, buyer):
+def test_jwt_login_blocks_brute_force_by_ip(api_client, buyer):
+    cache.clear()
     responses = [
         api_client.post(
-            "/api/users/login/", {"username": buyer.username, "password": "wrong"}
+            "/api/users/login/",
+            {"username": f"unknown-{attempt}", "password": "wrong"},
+            REMOTE_ADDR="198.51.100.10",
         )
-        for _ in range(11)
+        for attempt in range(5)
     ]
+    assert responses[-1].status_code == 429
+
+
+@pytest.mark.django_db
+def test_storefront_login_blocks_distributed_brute_force_by_username(client, buyer):
+    responses = [
+        client.post(
+            "/login/",
+            {"username": buyer.username, "password": "wrong"},
+            REMOTE_ADDR=f"198.51.100.{attempt}",
+        )
+        for attempt in range(1, 6)
+    ]
+
+    assert responses[-1].status_code == 429
+    assert (
+        client.post(
+            "/login/",
+            {"username": buyer.username, "password": "StrongPass123!"},
+            REMOTE_ADDR="203.0.113.20",
+        ).status_code
+        == 429
+    )
+
+
+@pytest.mark.django_db
+def test_successful_login_resets_previous_failures(client, buyer):
+    for _ in range(2):
+        assert (
+            client.post(
+                "/login/",
+                {"username": buyer.username, "password": "wrong"},
+                REMOTE_ADDR="198.51.100.20",
+            ).status_code
+            == 200
+        )
+
+    assert (
+        client.post(
+            "/login/",
+            {"username": buyer.username, "password": "StrongPass123!"},
+            REMOTE_ADDR="198.51.100.20",
+        ).status_code
+        == 302
+    )
+    client.post("/logout/")
+
+    for _ in range(4):
+        assert (
+            client.post(
+                "/login/",
+                {"username": buyer.username, "password": "wrong"},
+                REMOTE_ADDR="198.51.100.20",
+            ).status_code
+            == 200
+        )
+
+
+@pytest.mark.django_db
+def test_admin_login_is_protected(client, make_user):
+    admin = make_user(is_staff=True, is_superuser=True)
+    responses = [
+        client.post(
+            "/admin/login/",
+            {"username": admin.username, "password": "wrong"},
+            REMOTE_ADDR="198.51.100.30",
+        )
+        for _ in range(5)
+    ]
+
     assert responses[-1].status_code == 429
 
 

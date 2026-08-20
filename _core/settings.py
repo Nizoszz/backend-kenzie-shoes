@@ -73,6 +73,7 @@ MY_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "axes",
     "rest_framework",
     "corsheaders",
     "drf_spectacular",
@@ -92,6 +93,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.csp.ContentSecurityPolicyMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
 
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
@@ -259,6 +261,20 @@ SECURE_CSP = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+AXES_HANDLER = "axes.handlers.database.AxesDatabaseHandler"
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+AXES_FAILURE_LIMIT = int(os.getenv("AXES_FAILURE_LIMIT", "5"))
+AXES_COOLOFF_TIME = timedelta(minutes=int(os.getenv("AXES_COOLOFF_MINUTES", "15")))
+AXES_HTTP_RESPONSE_CODE = 429
+AXES_RESET_ON_SUCCESS = True
+AXES_ENABLE_ACCESS_FAILURE_LOG = True
+AXES_SENSITIVE_PARAMETERS = ["password", "token", "refresh"]
+
 LOGIN_URL = "storefront:login"
 LOGIN_REDIRECT_URL = "storefront:shop"
 LOGOUT_REDIRECT_URL = "storefront:home"
