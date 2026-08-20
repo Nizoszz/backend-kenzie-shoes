@@ -13,9 +13,14 @@ RUN groupadd --system django && useradd --system --gid django --home /app django
 WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 COPY --chown=django:django . .
-RUN SECRET_KEY=container-build-only DEBUG=true python manage.py collectstatic --noinput
+RUN SECRET_KEY=container-build-only \
+    DEBUG=false \
+    DATABASE_URL=sqlite:////tmp/container-build.sqlite3 \
+    ALLOWED_HOSTS=localhost \
+    SECURE_SSL_REDIRECT=false \
+    python manage.py collectstatic --noinput
 USER django
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('PORT', '8000') + '/health/', timeout=3)"
-CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn _core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn _core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --no-control-socket --access-logfile - --error-logfile -"]
