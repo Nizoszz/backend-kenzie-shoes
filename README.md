@@ -99,6 +99,41 @@ python manage.py check
 python manage.py makemigrations --check --dry-run
 ```
 
+## Docker e CD no Render
+
+A imagem roda como usuário sem privilégios, inclui os arquivos estáticos e expõe `/health/` para os health checks:
+
+```bash
+docker build -t django-commerce-api .
+docker run --rm -p 8000:8000 --env-file .env django-commerce-api
+```
+
+Após a pipeline de qualidade passar em `develop`, o workflow `.github/workflows/deploy.yml` publica no Docker Hub uma tag imutável `sha-<commit>` e a tag móvel `latest`; somente depois chama o Deploy Hook. Ele também pode ser iniciado manualmente.
+
+Configure em **GitHub → Settings → Secrets and variables → Actions**:
+
+- secret `DOCKERHUB_USERNAME`: usuário usado para autenticar no Docker Hub;
+- secret `DOCKERHUB_TOKEN`: access token do Docker Hub (não use a senha da conta);
+- variable `DOCKERHUB_IMAGE`: namespace e repositório da imagem, por exemplo `minhaempresa/django-commerce-api`.
+
+O usuário de autenticação e o namespace da imagem podem ser diferentes. O workflow não utiliza `github.actor` para o Docker Hub. Configure o Render como **Existing Image** apontando para `docker.io/<namespace>/<repository>:latest`. Se a imagem for privada, cadastre também no Render uma credencial do Docker Hub com permissão de leitura.
+
+No Render, desative Auto-Deploy para não duplicar implantações e defina o health check como `/health/`. Como o Pre-Deploy Command não está disponível em todos os planos, o container executa `python manage.py migrate --noinput` antes de iniciar o Gunicorn. No environment GitHub `production`, crie o secret `RENDER_DEPLOY_HOOK_URL` com o hook do serviço.
+
+O Render sobe a nova instância ao lado da atual, testa sua saúde e então transfere o tráfego, realizando a troca blue/green sem indisponibilidade. Migrações devem ser retrocompatíveis durante essa janela (expand/migrate/contract). Para rollback, selecione no Render a tag imutável do commit anterior.
+
+### Variáveis de ambiente no Render
+
+Na página **Environment** do Web Service, use **Add from .env** com o modelo `.env.render.example`. As únicas variáveis obrigatórias da aplicação são:
+
+```dotenv
+DEBUG=false
+SECRET_KEY=<chave longa e aleatória>
+DATABASE_URL=<Internal Database URL do Render Postgres>
+```
+
+Use a URL interna do PostgreSQL quando banco e serviço estiverem na mesma conta e região. O Render fornece `RENDER_EXTERNAL_HOSTNAME`, `PORT` e `WEB_CONCURRENCY` automaticamente, portanto elas não precisam ser cadastradas. Defina `ALLOWED_HOSTS` apenas para domínios personalizados; o domínio `*.onrender.com` é reconhecido automaticamente. SMTP e OIDC são opcionais e estão documentados no arquivo de exemplo.
+
 ## Verificações
 
 ```bash
