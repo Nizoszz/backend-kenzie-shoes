@@ -38,6 +38,31 @@ def test_login_explains_when_oidc_is_not_configured(client, settings):
     assert b"Login externo indispon\xc3\xadvel" in response.content
 
 
+@pytest.mark.django_db
+def test_registration_rejects_password_without_required_complexity(client):
+    response = client.post(
+        "/register/",
+        {
+            "username": "weak-web-user",
+            "email": "weak-web@example.com",
+            "first_name": "Weak",
+            "last_name": "User",
+            "street": "Rua Teste",
+            "number": 10,
+            "add_on": "",
+            "zipcode": "01000-000",
+            "city": "São Paulo",
+            "state": "SP",
+            "password1": "abcdefgh",
+            "password2": "abcdefgh",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "A senha deve conter" in response.content.decode()
+    assert User.objects.filter(username="weak-web-user").exists() is False
+
+
 def test_login_exposes_configured_oidc_provider(client, settings):
     settings.OIDC_SERVER_METADATA_URL = (
         "https://identity.example/.well-known/openid-configuration"

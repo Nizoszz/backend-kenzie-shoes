@@ -14,6 +14,24 @@ def test_argon2_uses_a_unique_random_salt_with_expected_length():
     assert 15 <= len(salt) <= 25
 
 
+@pytest.mark.parametrize(
+    "password",
+    [
+        "Short1!",
+        "lowercase1!",
+        "UPPERCASE1!",
+        "NoNumbers!",
+        "NoSpecial123",
+    ],
+)
+def test_password_policy_rejects_weak_passwords(password):
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+
+    with pytest.raises(ValidationError):
+        validate_password(password)
+
+
 @pytest.mark.django_db
 def test_registration_hashes_password_and_creates_address(api_client):
     response = api_client.post(
@@ -42,6 +60,31 @@ def test_registration_hashes_password_and_creates_address(api_client):
     assert check_password("StrongPass123!", user.password)
     assert user.password.startswith("argon2$")
     assert user.address.street == "Rua Nova"
+
+
+@pytest.mark.django_db
+def test_api_registration_applies_password_policy(api_client):
+    response = api_client.post(
+        "/api/users/",
+        {
+            "username": "weak-password",
+            "email": "weak@example.com",
+            "password": "12345678",
+            "first_name": "Weak",
+            "last_name": "Password",
+            "address": {
+                "street": "Rua Nova",
+                "number": 10,
+                "zipcode": "01000-000",
+                "city": "São Paulo",
+                "state": "SP",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "password" in response.data
 
 
 @pytest.mark.django_db
@@ -209,3 +252,15 @@ def test_only_owner_can_retrieve_or_update_user(authenticated_client, buyer, mak
     buyer.refresh_from_db()
     assert buyer.check_password("ChangedPass123!")
     assert buyer.address.street == "Rua Alterada"
+
+
+@pytest.mark.django_db
+def test_user_update_cannot_bypass_password_policy(authenticated_client, buyer):
+    response = authenticated_client(buyer).patch(
+        f"/api/users/{buyer.id}/", {"password": "abcdefgh"}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert "password" in response.data
+    buyer.refresh_from_db()
+    assert buyer.check_password("StrongPass123!")
