@@ -65,6 +65,12 @@ jobs:
     name: Tests on PostgreSQL
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TEST_POSTGRES_DB: commerce_test
+      TEST_POSTGRES_USER: commerce
+      TEST_POSTGRES_PASSWORD: commerce
+      TEST_POSTGRES_HOST: localhost
+      TEST_POSTGRES_PORT: "5432"
     services:
       postgres:
         image: postgres:17-alpine
@@ -79,13 +85,6 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-
-    env:
-      TEST_POSTGRES_DB: commerce_test
-      TEST_POSTGRES_USER: commerce
-      TEST_POSTGRES_PASSWORD: commerce
-      TEST_POSTGRES_HOST: localhost
-      TEST_POSTGRES_PORT: "5432"
 
     steps:
       - name: Checkout repository

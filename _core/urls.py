@@ -21,9 +21,12 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny, IsAdminUser
 
+from _core.views import health
+
 docs_permissions = [AllowAny] if settings.DEBUG else [IsAdminUser]
 
 urlpatterns = [
+    path("health/", health, name="health"),
     path("", include("storefront.urls")),
     path("admin/", admin.site.urls),
     path("api/", include("users.urls")),

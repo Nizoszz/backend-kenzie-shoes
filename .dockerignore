@@ -1,0 +1,67 @@
+# Version control, CI and editor metadata
+.git
+.gitignore
+.gitattributes
+.github
+.trunk
+.vscode
+.idea
+
+# Secrets and local configuration
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*
+*secret*
+
+# Python environments, caches and compiled files
+.venv
+venv
+env
+__pycache__
+**/__pycache__
+*.py[cod]
+*$py.class
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.tox
+.nox
+
+# Tests, coverage and development-only configuration
+**/tests.py
+**/test_*.py
+**/*_tests.py
+_core/settings_test.py
+conftest.py
+pytest.ini
+pyproject.toml
+requirements-dev.txt
+.coverage
+.coverage.*
+coverage.xml
+htmlcov
+
+# Local data and runtime artifacts
+*.sqlite3
+*.db
+*.log
+staticfiles
+
+# Local infrastructure not used by the application container
+compose.yaml
+docker
+build.sh
+
+# Documentation, reports and repository-only assets
+docs
+*.md
+DERKENZIESHOES.png
+
+# Docker build metadata does not need to be copied into the image
+.dockerignore
+Dockerfile*
